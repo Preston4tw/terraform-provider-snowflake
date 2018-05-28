@@ -111,7 +111,6 @@ func resourceSnowflakeSchemaUpdate(d *schema.ResourceData, meta interface{}) err
 	db := meta.(*sql.DB)
 	s := strings.Split(d.Id(), ".")
 	database, schema := s[0], s[1]
-	// statement := fmt.Sprintf("")
 	// Rather than issue a single alter database statement for all possible
 	// changes issue an alter for each possible thing that has changed. Enable
 	// partial mode.
@@ -153,11 +152,6 @@ func resourceSnowflakeSchemaUpdate(d *schema.ResourceData, meta interface{}) err
 
 func resourceSnowflakeSchemaDelete(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
-	// https://docs.snowflake.net/manuals/sql-reference/identifiers-syntax.html
-	// As long as identifiers are not double quoted they are not case sensitive
-	// and multiple resources for a name are impossible. This is a check
-	// against the case where databases were created with double quotes using
-	// the same name with different casing
 	s := strings.Split(d.Id(), ".")
 	database, schema := s[0], s[1]
 	exists, err := schemaExists(db, database, schema)

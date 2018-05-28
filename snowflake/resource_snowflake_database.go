@@ -108,18 +108,17 @@ func resourceSnowflakeDatabaseUpdate(d *schema.ResourceData, meta interface{}) e
 	if exists == false {
 		return fmt.Errorf("Database %s does not exist", d.Id())
 	}
-	// statement := fmt.Sprintf("")
 	// Rather than issue a single alter database statement for all possible
 	// changes issue an alter for each possible thing that has changed. Enable
 	// partial mode.
 	d.Partial(true)
 	if d.HasChange("name") {
 		// check that the rename target does not exist
-		destExists, err := databaseExists(db, d.Get("name").(string))
+		exists, err := databaseExists(db, d.Get("name").(string))
 		if err != nil {
 			return err
 		}
-		if destExists == true {
+		if exists == true {
 			return fmt.Errorf("Cannot rename %v to %v, %v already exists", d.Id(), d.Get("name"), d.Get("name"))
 		}
 		statement := fmt.Sprintf("ALTER DATABASE %v RENAME TO %v", d.Id(), d.Get("name"))
@@ -150,11 +149,6 @@ func resourceSnowflakeDatabaseUpdate(d *schema.ResourceData, meta interface{}) e
 
 func resourceSnowflakeDatabaseDelete(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
-	// https://docs.snowflake.net/manuals/sql-reference/identifiers-syntax.html
-	// As long as identifiers are not double quoted they are not case sensitive
-	// and multiple resources for a name are impossible. This is a check
-	// against the case where databases were created with double quotes using
-	// the same name with different casing
 	exists, err := databaseExists(db, d.Id())
 	if err != nil {
 		return err
