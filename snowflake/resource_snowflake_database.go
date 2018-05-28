@@ -71,7 +71,7 @@ func resourceSnowflakeDatabaseCreate(d *schema.ResourceData, meta interface{}) e
 	if err != nil {
 		return err
 	}
-	d.SetId(d.Get("name").(string))
+	d.SetId(strings.ToUpper(d.Get("name").(string)))
 	return nil
 }
 
