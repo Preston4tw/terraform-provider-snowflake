@@ -3,7 +3,6 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -39,18 +38,6 @@ func dataSourceSnowflakeSchema() *schema.Resource {
 			},
 		},
 	}
-}
-
-type showSchemaRow struct {
-	createdOn     time.Time
-	name          string
-	isDefault     string
-	isCurrent     string
-	databaseName  string
-	owner         string
-	comment       string
-	options       string
-	retentionTime int
 }
 
 func dataSourceSnowflakeSchemaRead(d *schema.ResourceData, meta interface{}) error {

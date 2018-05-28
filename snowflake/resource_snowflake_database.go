@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -83,29 +82,29 @@ func resourceSnowflakeDatabaseRead(d *schema.ResourceData, meta interface{}) err
 			return fmt.Errorf("More than 1 row returned for \"SHOW DATABASES LIKE '%v'\"", d.Id())
 		}
 
-		var (
-			createdOn     time.Time
-			name          string
-			isDefault     string
-			isCurrent     string
-			origin        string
-			owner         string
-			comment       string
-			options       string
-			retentionTime int
-		)
-		if err := rows.Scan(&createdOn, &name, &isDefault, &isCurrent, &origin, &owner, &comment, &options, &retentionTime); err != nil {
+		var r showDatabaseRow
+		if err := rows.Scan(
+			&r.createdOn,
+			&r.name,
+			&r.isDefault,
+			&r.isCurrent,
+			&r.origin,
+			&r.owner,
+			&r.comment,
+			&r.options,
+			&r.retentionTime,
+		); err != nil {
 			return err
 		}
-		d.Set("name", strings.ToUpper(name))
-		d.Set("owner", strings.ToUpper(owner))
-		d.Set("comment", comment)
-		if options == "TRANSIENT" {
+		d.Set("name", strings.ToUpper(r.name))
+		d.Set("owner", strings.ToUpper(r.owner))
+		d.Set("comment", r.comment)
+		if r.options == "TRANSIENT" {
 			d.Set("transient", true)
 		} else {
 			d.Set("transient", false)
 		}
-		d.Set("retention_time", retentionTime)
+		d.Set("retention_time", r.retentionTime)
 		index = index + 1
 	}
 	return nil
