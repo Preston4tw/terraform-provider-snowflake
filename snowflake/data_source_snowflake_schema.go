@@ -3,6 +3,8 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -15,14 +17,23 @@ func dataSourceSnowflakeSchema() *schema.Resource {
 			"schema": {
 				Type:     schema.TypeString,
 				Required: true,
+				StateFunc: func(v interface{}) string {
+					return strings.ToUpper(v.(string))
+				},
 			},
 			"database": {
 				Type:     schema.TypeString,
 				Required: true,
+				StateFunc: func(v interface{}) string {
+					return strings.ToUpper(v.(string))
+				},
 			},
 			"owner": {
 				Type:     schema.TypeString,
 				Computed: true,
+				StateFunc: func(v interface{}) string {
+					return strings.ToUpper(v.(string))
+				},
 			},
 			"comment": {
 				Type:     schema.TypeString,
@@ -42,49 +53,29 @@ func dataSourceSnowflakeSchema() *schema.Resource {
 
 func dataSourceSnowflakeSchemaRead(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
-	statement := fmt.Sprintf("SHOW SCHEMAS LIKE '%v' in %v", d.Get("schema"), d.Get("database"))
-
-	rows, err := db.Query(statement)
+	database := d.Get("database").(string)
+	schema := d.Get("schema").(string)
+	schemaInfo, err := showSchema(db, database, schema)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-
-	index := 0
-
-	for rows.Next() {
-		index = index + 1
-		if index > 1 {
-			return fmt.Errorf("More than 1 row returned for query '%v'", statement)
-		}
-		var r showSchemaRow
-		if err := rows.Scan(
-			&r.createdOn,
-			&r.name,
-			&r.isDefault,
-			&r.isCurrent,
-			&r.databaseName,
-			&r.owner,
-			&r.comment,
-			&r.options,
-			&r.retentionTime,
-		); err != nil {
+	d.SetId(strings.ToUpper(fmt.Sprintf("%s.%s", database, schema)))
+	d.Set("schema", schemaInfo.name)
+	d.Set("database", schemaInfo.databaseName)
+	d.Set("owner", schemaInfo.owner)
+	d.Set("comment", schemaInfo.comment)
+	if schemaInfo.options == "TRANSIENT" {
+		d.Set("transient", true)
+	} else {
+		d.Set("transient", false)
+	}
+	if schemaInfo.retentionTime != "" {
+		retentionTime, err := strconv.Atoi(schemaInfo.retentionTime)
+		if err != nil {
 			return err
 		}
-		d.SetId(fmt.Sprintf("%s.%s", r.databaseName, r.name))
-		d.Set("schema", r.name)
-		d.Set("database", r.databaseName)
-		d.Set("owner", r.owner)
-		d.Set("comment", r.comment)
-		if r.options == "TRANSIENT" {
-			d.Set("transient", true)
-		} else {
-			d.Set("transient", false)
-		}
-		d.Set("retention_time", r.retentionTime)
+		d.Set("retention_time", retentionTime)
 	}
-	if index == 0 {
-		return fmt.Errorf("No schemas found for query '%v'", statement)
-	}
+
 	return nil
 }

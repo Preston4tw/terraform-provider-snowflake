@@ -1,6 +1,8 @@
 package snowflake
 
-import "time"
+import (
+	"time"
+)
 
 type showDatabaseRow struct {
 	createdOn     time.Time
@@ -11,7 +13,7 @@ type showDatabaseRow struct {
 	owner         string
 	comment       string
 	options       string
-	retentionTime int
+	retentionTime string
 }
 
 type showSchemaRow struct {
@@ -23,5 +25,5 @@ type showSchemaRow struct {
 	owner         string
 	comment       string
 	options       string
-	retentionTime int
+	retentionTime string
 }
