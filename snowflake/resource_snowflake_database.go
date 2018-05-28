@@ -3,6 +3,7 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -64,7 +65,7 @@ func resourceSnowflakeDatabaseCreate(d *schema.ResourceData, meta interface{}) e
 	if err != nil {
 		return err
 	}
-	d.SetId(d.Get("name").(string))
+	d.SetId(strings.ToUpper(d.Get("name").(string)))
 	return nil
 }
 func resourceSnowflakeDatabaseRead(d *schema.ResourceData, meta interface{}) error {
@@ -96,7 +97,8 @@ func resourceSnowflakeDatabaseRead(d *schema.ResourceData, meta interface{}) err
 		if err := rows.Scan(&createdOn, &name, &isDefault, &isCurrent, &origin, &owner, &comment, &options, &retentionTime); err != nil {
 			return err
 		}
-		d.Set("owner", owner)
+		d.Set("name", strings.ToUpper(name))
+		d.Set("owner", strings.ToUpper(owner))
 		d.Set("comment", comment)
 		if options == "TRANSIENT" {
 			d.Set("transient", true)
@@ -133,7 +135,7 @@ func resourceSnowflakeDatabaseUpdate(d *schema.ResourceData, meta interface{}) e
 			return err
 		}
 		d.SetPartial("name")
-		d.SetId(d.Get("name").(string))
+		d.SetId(strings.ToUpper(d.Get("name").(string)))
 	}
 	if d.HasChange("comment") {
 		statement := fmt.Sprintf("ALTER DATABASE %v SET COMMENT = '%v'", d.Id(), d.Get("comment"))
