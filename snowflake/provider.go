@@ -20,6 +20,9 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("SNOWFLAKE_DSN", nil),
 			},
 		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"snowflake_schema": dataSourceSnowflakeSchema(),
+		},
 		ResourcesMap: map[string]*schema.Resource{
 			"snowflake_database": resourceSnowflakeDatabase(),
 		},
