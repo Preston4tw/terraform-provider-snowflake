@@ -26,6 +26,7 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"snowflake_database": resourceSnowflakeDatabase(),
 			"snowflake_schema":   resourceSnowflakeSchema(),
+			"snowflake_table":    resourceSnowflakeTable(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

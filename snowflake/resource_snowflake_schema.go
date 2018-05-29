@@ -20,7 +20,7 @@ func resourceSnowflakeSchema() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"schema": {
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				StateFunc: func(v interface{}) string {
@@ -60,7 +60,7 @@ func resourceSnowflakeSchema() *schema.Resource {
 
 func resourceSnowflakeSchemaCreate(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
-	resourceID := strings.ToUpper(fmt.Sprintf("%s.%s", d.Get("database"), d.Get("schema")))
+	resourceID := strings.ToUpper(fmt.Sprintf("%s.%s", d.Get("database"), d.Get("name")))
 	statement := fmt.Sprintf("CREATE SCHEMA %s DATA_RETENTION_TIME_IN_DAYS = %d", resourceID, d.Get("retention_time"))
 	if d.Get("transient").(bool) == true {
 		statement = fmt.Sprintf("CREATE TRANSIENT SCHEMA %s DATA_RETENTION_TIME_IN_DAYS = %d", resourceID, d.Get("retention_time"))
@@ -87,7 +87,7 @@ func resourceSnowflakeSchemaRead(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return err
 	}
-	d.Set("schema", schemaInfo.name)
+	d.Set("name", schemaInfo.name)
 	d.Set("database", schemaInfo.databaseName)
 	d.Set("owner", schemaInfo.owner)
 	d.Set("comment", schemaInfo.comment)

@@ -27,7 +27,6 @@ func resourceSnowflakeDatabase() *schema.Resource {
 				StateFunc: func(v interface{}) string {
 					return strings.ToUpper(v.(string))
 				},
-				// ValidateFunc: validateDatabaseName,
 			},
 			"owner": {
 				Type:     schema.TypeString,
