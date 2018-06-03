@@ -8,6 +8,9 @@ terraform-provider-snowflake is a [Terraform](https://www.terraform.io/) provide
 
 - snowflake_database
 - snowflake_schema
+- snowflake_pipe
+- snowflake_table
+- snowflake_view
 
 ### Data Sources
 
