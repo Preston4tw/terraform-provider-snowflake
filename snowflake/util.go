@@ -160,6 +160,42 @@ func readTable(db *sql.DB, database string, schema string, name string) (infoSch
 	return r, nil
 }
 
+func readView(db *sql.DB, database string, schema string, name string) (infoSchemaView, error) {
+	var r infoSchemaView
+	exists, err := sqlObjExists(db, "views", name, fmt.Sprintf("%s.%s", database, schema))
+	if err != nil {
+		return r, err
+	}
+	if exists == false {
+		return r, fmt.Errorf("View %s.%s.%s does not exist", database, schema, name)
+	}
+	statement := fmt.Sprintf("SELECT * from %s.information_schema.views where table_name = '%s' and table_schema = '%s'", database, name, schema)
+	rows, err := db.Query(statement)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(
+			&r.tableCatalog,
+			&r.tableSchema,
+			&r.tableName,
+			&r.tableOwner,
+			&r.viewDefinition,
+			&r.checkOption,
+			&r.isUpdatable,
+			&r.insertableInto,
+			&r.isSecure,
+			&r.created,
+			&r.lastAltered,
+			&r.comment,
+		); err != nil {
+			return r, err
+		}
+	}
+	return r, nil
+}
+
 func showTable(db *sql.DB, databaseName string, schemaName string, name string) (showTableRow, error) {
 	var r showTableRow
 	// This verifies that one and only one database exists
