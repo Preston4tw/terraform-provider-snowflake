@@ -15,7 +15,10 @@ func resourceSnowflakeTable() *schema.Resource {
 		Update: resourceSnowflakeTableUpdate,
 		Delete: resourceSnowflakeTableDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				d.SetId(strings.ToUpper(d.Id()))
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -97,16 +100,16 @@ func resourceSnowflakeTableCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceSnowflakeTableRead(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	s := strings.Split(d.Id(), ".")
-	databaseName, schemaName, tableName := s[0], s[1], s[2]
-	tableInfo, err := showTable(db, databaseName, schemaName, tableName)
+	database, schema, name := s[0], s[1], s[2]
+	t, err := readTable(db, database, schema, name)
 	if err != nil {
 		return err
 	}
-	d.Set("name", tableInfo.name)
-	d.Set("database", tableInfo.databaseName)
-	d.Set("schema", tableInfo.schemaName)
+	d.Set("name", t.tableName)
+	d.Set("database", t.tableCatalog)
+	d.Set("schema", t.tableSchema)
 	columnDefs := []map[string]string{}
-	columnInfo, err := descTable(db, databaseName, schemaName, tableName)
+	columnInfo, err := descTable(db, database, schema, name)
 	for _, e := range columnInfo {
 		columnDefs = append(columnDefs, map[string]string{
 			"name": e.colName,
@@ -127,7 +130,7 @@ func resourceSnowflakeTableUpdate(d *schema.ResourceData, meta interface{}) erro
 	d.Partial(true)
 	if d.HasChange("name") {
 		// check that the rename target does not exist
-		exists, err := tableExists(db, databaseName, schemaName, d.Get("name").(string))
+		exists, err := sqlObjExists(db, "tables", d.Get("name").(string), fmt.Sprintf("%s.%s", databaseName, schemaName))
 		if err != nil {
 			return err
 		}
@@ -149,8 +152,8 @@ func resourceSnowflakeTableUpdate(d *schema.ResourceData, meta interface{}) erro
 func resourceSnowflakeTableDelete(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	s := strings.Split(d.Id(), ".")
-	databaseName, schemaName, tableName := s[0], s[1], s[2]
-	exists, err := tableExists(db, databaseName, schemaName, tableName)
+	databaseName, schemaName, name := s[0], s[1], s[2]
+	exists, err := sqlObjExists(db, "tables", name, fmt.Sprintf("%s.%s", databaseName, schemaName))
 	if err != nil {
 		return err
 	}

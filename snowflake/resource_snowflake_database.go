@@ -18,7 +18,10 @@ func resourceSnowflakeDatabase() *schema.Resource {
 		Update: resourceSnowflakeDatabaseUpdate,
 		Delete: resourceSnowflakeDatabaseDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				d.SetId(strings.ToUpper(d.Id()))
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -43,10 +46,11 @@ func resourceSnowflakeDatabase() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
+				Default:  false,
 			},
 			"retention_time": {
 				Type:     schema.TypeInt,
-				Default:  0,
+				Default:  1,
 				Optional: true,
 			},
 		},
@@ -56,27 +60,30 @@ func resourceSnowflakeDatabase() *schema.Resource {
 
 func resourceSnowflakeDatabaseCreate(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
-	statement := fmt.Sprintf("CREATE DATABASE %v DATA_RETENTION_TIME_IN_DAYS = %d", d.Get("name"), d.Get("retention_time"))
-	if d.Get("transient").(bool) == true {
-		statement = fmt.Sprintf("CREATE TRANSIENT DATABASE %v DATA_RETENTION_TIME_IN_DAYS = %d", d.Get("name"), d.Get("retention_time"))
-		d.Set("transient", true)
-	} else {
-		d.Set("transient", false)
+	name := strings.ToUpper(d.Get("name").(string))
+	retentionTime := d.Get("retention_time")
+	transient := d.Get("transient").(bool)
+	comment := d.Get("comment")
+
+	statement := fmt.Sprintf("CREATE DATABASE %v DATA_RETENTION_TIME_IN_DAYS = %d", name, retentionTime)
+	if transient == true {
+		statement = fmt.Sprintf("CREATE TRANSIENT DATABASE %v DATA_RETENTION_TIME_IN_DAYS = %d", name, retentionTime)
 	}
-	if d.Get("comment") != "" {
-		statement += fmt.Sprintf(" COMMENT = '%v'", d.Get("comment"))
+	if comment != "" {
+		statement += fmt.Sprintf(" COMMENT = '%v'", comment)
 	}
 	_, err := db.Exec(statement)
 	if err != nil {
 		return err
 	}
-	d.SetId(strings.ToUpper(d.Get("name").(string)))
+	d.SetId(name)
 	return nil
 }
 
 func resourceSnowflakeDatabaseRead(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
-	databaseInfo, err := showDatabase(db, d.Id())
+	name := d.Id()
+	databaseInfo, err := showDatabase(db, name)
 	if err != nil {
 		return err
 	}
@@ -100,7 +107,9 @@ func resourceSnowflakeDatabaseRead(d *schema.ResourceData, meta interface{}) err
 
 func resourceSnowflakeDatabaseUpdate(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
-	exists, err := databaseExists(db, d.Id())
+	name := d.Id()
+	exists, err := sqlObjExists(db, "databases", name, "account")
+
 	if err != nil {
 		return err
 	}
@@ -113,7 +122,7 @@ func resourceSnowflakeDatabaseUpdate(d *schema.ResourceData, meta interface{}) e
 	d.Partial(true)
 	if d.HasChange("name") {
 		// check that the rename target does not exist
-		exists, err := databaseExists(db, d.Get("name").(string))
+		exists, err := sqlObjExists(db, "databases", d.Get("name").(string), "account")
 		if err != nil {
 			return err
 		}
@@ -148,7 +157,8 @@ func resourceSnowflakeDatabaseUpdate(d *schema.ResourceData, meta interface{}) e
 
 func resourceSnowflakeDatabaseDelete(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
-	exists, err := databaseExists(db, d.Id())
+	name := d.Id()
+	exists, err := sqlObjExists(db, "databases", name, "account")
 	if err != nil {
 		return err
 	}

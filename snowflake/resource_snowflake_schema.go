@@ -16,7 +16,10 @@ func resourceSnowflakeSchema() *schema.Resource {
 		Update: resourceSnowflakeSchemaUpdate,
 		Delete: resourceSnowflakeSchemaDelete,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				d.SetId(strings.ToUpper(d.Id()))
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -110,19 +113,19 @@ func resourceSnowflakeSchemaRead(d *schema.ResourceData, meta interface{}) error
 func resourceSnowflakeSchemaUpdate(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	s := strings.Split(d.Id(), ".")
-	database, schema := s[0], s[1]
+	database, name := s[0], s[1]
 	// Rather than issue a single alter database statement for all possible
 	// changes issue an alter for each possible thing that has changed. Enable
 	// partial mode.
 	d.Partial(true)
 	if d.HasChange("name") {
 		// check that the rename target does not exist
-		exists, err := schemaExists(db, database, schema)
+		exists, err := sqlObjExists(db, "schemas", name, database)
 		if err != nil {
 			return err
 		}
 		if exists == true {
-			return fmt.Errorf("Cannot rename %s to %s.%s, %s.%s already exists", d.Id(), database, schema, database, d.Get("name"))
+			return fmt.Errorf("Cannot rename %s to %s.%s, %s.%s already exists", d.Id(), database, name, database, d.Get("name"))
 		}
 		statement := fmt.Sprintf("ALTER SCHEMA %s RENAME TO %s.%s", d.Id(), database, d.Get("name"))
 		if _, err := db.Exec(statement); err != nil {
@@ -153,8 +156,8 @@ func resourceSnowflakeSchemaUpdate(d *schema.ResourceData, meta interface{}) err
 func resourceSnowflakeSchemaDelete(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	s := strings.Split(d.Id(), ".")
-	database, schema := s[0], s[1]
-	exists, err := schemaExists(db, database, schema)
+	database, name := s[0], s[1]
+	exists, err := sqlObjExists(db, "schemas", name, database)
 	if err != nil {
 		return err
 	}

@@ -54,12 +54,12 @@ func dataSourceSnowflakeSchema() *schema.Resource {
 func dataSourceSnowflakeSchemaRead(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	database := d.Get("database").(string)
-	schema := d.Get("name").(string)
-	schemaInfo, err := showSchema(db, database, schema)
+	name := d.Get("name").(string)
+	schemaInfo, err := showSchema(db, database, name)
 	if err != nil {
 		return err
 	}
-	d.SetId(strings.ToUpper(fmt.Sprintf("%s.%s", database, schema)))
+	d.SetId(strings.ToUpper(fmt.Sprintf("%s.%s", database, name)))
 	d.Set("name", schemaInfo.name)
 	d.Set("database", schemaInfo.databaseName)
 	d.Set("owner", schemaInfo.owner)

@@ -26,7 +26,8 @@ build: $(TARGET)
 	@true
 
 test: build
-	terraform init && TF_LOG=debug terraform plan
+	#terraform init && TF_LOG=debug terraform plan
+	terraform init && terraform plan
 
 clean:
 	@rm -f $(TARGET)
