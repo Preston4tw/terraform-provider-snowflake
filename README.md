@@ -27,3 +27,7 @@ user[:password]@host:port/database/schema?account=user_account[?param1=value1&pa
 ```
 
 If a variable is set up for the DSN it can be configured as an environment variable or in `terraform.tfvars`.
+
+## Of note
+
+The provider needs an active warehouse to run queries against information_schema for refreshing resources. You have to pre-create an auto-resuming warehouse and specify that warehouse in the DSN as a parameter (ex. `?warehouse=myWarehouse`).
