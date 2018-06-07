@@ -24,6 +24,7 @@ func resourceSnowflakePipe() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 				StateFunc: func(v interface{}) string {
 					return strings.ToUpper(v.(string))
 				},
@@ -31,6 +32,7 @@ func resourceSnowflakePipe() *schema.Resource {
 			"schema": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 				StateFunc: func(v interface{}) string {
 					return strings.ToUpper(v.(string))
 				},
@@ -38,6 +40,7 @@ func resourceSnowflakePipe() *schema.Resource {
 			"database": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 				StateFunc: func(v interface{}) string {
 					return strings.ToUpper(v.(string))
 				},
@@ -49,11 +52,13 @@ func resourceSnowflakePipe() *schema.Resource {
 			"copy_statement": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"auto_ingest": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
+				ForceNew: true,
 			},
 			"notification_channel": {
 				Type:     schema.TypeString,
@@ -76,7 +81,7 @@ func resourceSnowflakePipeCreate(d *schema.ResourceData, meta interface{}) error
 	copyStatement := d.Get("copy_statement")
 	autoIngest := d.Get("auto_ingest")
 	pipeID := fmt.Sprintf("%s.%s.%s", databaseName, schemaName, name)
-	statement := fmt.Sprintf("CREATE PIPE %s auto_ingest=%s comment='%s' as %s", pipeID, autoIngest, comment, copyStatement)
+	statement := fmt.Sprintf("CREATE PIPE %s auto_ingest=%t comment='%s' as %s", pipeID, autoIngest, comment, copyStatement)
 	_, err := db.Exec(statement)
 	if err != nil {
 		return err
@@ -98,11 +103,14 @@ func resourceSnowflakePipeRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("copy_statement", r.definition)
 	d.Set("owner", r.owner)
 	d.Set("notification_channel", r.notificationChannel)
+	d.Set("auto_ingest", r.notificationChannel != "")
 	d.Set("comment", r.comment)
+	d.Set("name", r.name)
 
 	return nil
 }
 func resourceSnowflakePipeUpdate(d *schema.ResourceData, meta interface{}) error {
+	// Update comment
 	return nil
 }
 func resourceSnowflakePipeDelete(d *schema.ResourceData, meta interface{}) error {

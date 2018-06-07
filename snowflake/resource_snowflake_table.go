@@ -55,6 +55,7 @@ func resourceSnowflakeTable() *schema.Resource {
 						"name": {
 							Type:     schema.TypeString,
 							Required: true,
+							ForceNew: true,
 							StateFunc: func(v interface{}) string {
 								return strings.ToUpper(v.(string))
 							},
@@ -62,6 +63,7 @@ func resourceSnowflakeTable() *schema.Resource {
 						"type": {
 							Type:     schema.TypeString,
 							Required: true,
+							ForceNew: true,
 							StateFunc: func(v interface{}) string {
 								return strings.ToUpper(v.(string))
 							},
