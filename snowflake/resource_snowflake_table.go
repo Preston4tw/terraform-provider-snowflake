@@ -68,6 +68,14 @@ func resourceSnowflakeTable() *schema.Resource {
 								return strings.ToUpper(v.(string))
 							},
 						},
+						"default": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+							StateFunc: func(v interface{}) string {
+								return strings.ToUpper(v.(string))
+							},
+						},
 					},
 				},
 			},
@@ -87,7 +95,11 @@ func resourceSnowflakeTableCreate(d *schema.ResourceData, meta interface{}) erro
 	// but this two step approach seems to..
 	for _, iElement := range d.Get("columns").([]interface{}) {
 		element := iElement.(map[string]interface{})
-		columnDefs += fmt.Sprintf("%s %s,", element["name"], element["type"])
+		if element["default"] != "" {
+			columnDefs += fmt.Sprintf("%s %s default %s,", element["name"], element["type"], element["default"])
+		} else {
+			columnDefs += fmt.Sprintf("%s %s,", element["name"], element["type"])
+		}
 	}
 	columnDefs = strings.TrimRight(columnDefs, ",")
 	statement := fmt.Sprintf("CREATE TABLE %s ( %s )", tableID, columnDefs)
@@ -113,10 +125,14 @@ func resourceSnowflakeTableRead(d *schema.ResourceData, meta interface{}) error 
 	columnDefs := []map[string]string{}
 	columnInfo, err := descTable(db, database, schema, name)
 	for _, e := range columnInfo {
-		columnDefs = append(columnDefs, map[string]string{
+		columnDef := map[string]string{
 			"name": e.colName,
 			"type": e.colType,
-		})
+		}
+		if e.defaultValue.Valid {
+			columnDef["default"] = e.defaultValue.String
+		}
+		columnDefs = append(columnDefs, columnDef)
 	}
 	d.Set("columns", columnDefs)
 	return nil
