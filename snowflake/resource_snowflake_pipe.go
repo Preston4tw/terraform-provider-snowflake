@@ -53,6 +53,9 @@ func resourceSnowflakePipe() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				StateFunc: func(v interface{}) string {
+					return strings.TrimSpace(v.(string))
+				},
 			},
 			"auto_ingest": {
 				Type:     schema.TypeBool,
@@ -100,7 +103,7 @@ func resourceSnowflakePipeRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("database", r.databaseName)
 	d.Set("schema", r.schemaName)
-	d.Set("copy_statement", r.definition)
+	d.Set("copy_statement", strings.TrimSpace(r.definition))
 	d.Set("owner", r.owner)
 	d.Set("notification_channel", r.notificationChannel)
 	d.Set("auto_ingest", r.notificationChannel != "")
