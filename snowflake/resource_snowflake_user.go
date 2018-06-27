@@ -42,9 +42,10 @@ func resourceSnowflakeUser() *schema.Resource {
 					return strings.ToUpper(v.(string))
 				},
 			},
-			"must_reset_password": {
+			"must_change_password": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default: false,
 			},
 		},
 	}
@@ -55,14 +56,19 @@ func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error
 	name := strings.ToUpper(d.Get("name").(string))
 	login_name := strings.ToUpper(d.Get("login_name").(string))
 	email := strings.ToUpper(d.Get("email").(string))
+	must_change_password := d.Get("must_change_password").(bool)
 
 	statement := fmt.Sprintf("CREATE USER %v", name)
+	if must_change_password == true {
+		statement += fmt.Sprintf(" MUST_CHANGE_PASSWORD = TRUE")
+	}
 	if login_name != "" {
 		statement += fmt.Sprintf(" LOGIN_NAME = '%s'", login_name)
 	}
 	if email != "" {
 		statement += fmt.Sprintf(" EMAIL = '%s'", email)
 	}
+	
 
 	_, err := db.Exec(statement)
 	if err != nil {
@@ -82,6 +88,7 @@ func resourceSnowflakeUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", userInfo.name)
 	d.Set("login_name", userInfo.login_name)
 	d.Set("email", userInfo.email)
+	d.Set("must_change_password", userInfo.must_change_password)
 
 	return nil
 }
@@ -131,6 +138,13 @@ func resourceSnowflakeUserUpdate(d *schema.ResourceData, meta interface{}) error
 			return err
 		}
 		d.SetPartial("login_name")
+	}
+	if d.HasChange("must_change_password") {
+		statement := fmt.Sprintf("ALTER USER %v SET MUST_CHANGE_PASSWORD = %v", d.Id(), d.Get("must_change_password"))
+		if _, err := db.Exec(statement); err != nil {
+			return err
+		}
+		d.SetPartial("must_change_password")
 	}
 	d.Partial(false)
 	return nil
