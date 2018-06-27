@@ -42,11 +42,14 @@ func resourceSnowflakeUser() *schema.Resource {
 func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	name := strings.ToUpper(d.Get("name").(string))
-	login_name := strings.toUpper(d.Get("login_name").(string))
+	login_name := strings.ToUpper(d.Get("login_name").(string))
 
 	statement := fmt.Sprintf("CREATE USER %v", name)
 
 	//append login_name if not null
+	if login_name != "" {
+		statement += fmt.Sprintf(" LOGIN_NAME = '%s'", login_name)
+	}
 
 	_, err := db.Exec(statement)
 	if err != nil {
