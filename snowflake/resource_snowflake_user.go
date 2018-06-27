@@ -45,7 +45,15 @@ func resourceSnowflakeUser() *schema.Resource {
 			"must_change_password": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: false,
+				Default:  false,
+			},
+			"default_role": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"default_warehouse": {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 		},
 	}
@@ -57,6 +65,8 @@ func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error
 	login_name := strings.ToUpper(d.Get("login_name").(string))
 	email := strings.ToUpper(d.Get("email").(string))
 	must_change_password := d.Get("must_change_password").(bool)
+	default_role := strings.ToUpper(d.Get("default_role").(string))
+	default_warehouse := strings.ToUpper(d.Get("default_warehouse").(string))
 
 	statement := fmt.Sprintf("CREATE USER %v", name)
 	if must_change_password == true {
@@ -68,7 +78,12 @@ func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error
 	if email != "" {
 		statement += fmt.Sprintf(" EMAIL = '%s'", email)
 	}
-	
+	if default_role != "" {
+		statement += fmt.Sprintf(" DEFAULT_ROLE = '%s'", default_role)
+	}
+	if default_warehouse != "" {
+		statement += fmt.Sprintf(" DEFAULT_WAREHOUSE = '%s'", default_warehouse)
+	}
 
 	_, err := db.Exec(statement)
 	if err != nil {
@@ -89,6 +104,8 @@ func resourceSnowflakeUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("login_name", userInfo.login_name)
 	d.Set("email", userInfo.email)
 	d.Set("must_change_password", userInfo.must_change_password)
+	d.Set("default_role", userInfo.default_role)
+	d.Set("default_warehouse", userInfo.default_warehouse)
 
 	return nil
 }
@@ -145,6 +162,20 @@ func resourceSnowflakeUserUpdate(d *schema.ResourceData, meta interface{}) error
 			return err
 		}
 		d.SetPartial("must_change_password")
+	}
+	if d.HasChange("default_role") {
+		statement := fmt.Sprintf("ALTER USER %v SET DEFAULT_ROLE = '%v'", d.Id(), d.Get("default_role"))
+		if _, err := db.Exec(statement); err != nil {
+			return err
+		}
+		d.SetPartial("default_role")
+	}
+	if d.HasChange("default_warehouse") {
+		statement := fmt.Sprintf("ALTER USER %v SET DEFAULT_WAREHOUSE = '%v'", d.Id(), d.Get("default_warehouse"))
+		if _, err := db.Exec(statement); err != nil {
+			return err
+		}
+		d.SetPartial("default_warehouse")
 	}
 	d.Partial(false)
 	return nil
