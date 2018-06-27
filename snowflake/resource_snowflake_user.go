@@ -20,10 +20,17 @@ func resourceSnowflakeUser() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
-				Schema: map[string]*schema.Schema{
+		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				StateFunc: func(v interface{}) string {
+					return strings.ToUpper(v.(string))
+				},
+			},
+			"login_name": {
+				Type:     schema.TypeString,
+				Optional: true,
 				StateFunc: func(v interface{}) string {
 					return strings.ToUpper(v.(string))
 				},
@@ -35,8 +42,11 @@ func resourceSnowflakeUser() *schema.Resource {
 func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	name := strings.ToUpper(d.Get("name").(string))
+	login_name := strings.toUpper(d.Get("login_name").(string))
 
 	statement := fmt.Sprintf("CREATE USER %v", name)
+
+	//append login_name if not null
 
 	_, err := db.Exec(statement)
 	if err != nil {
@@ -49,11 +59,11 @@ func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error
 func resourceSnowflakeUserRead(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	name := d.Id()
-	databaseInfo, err := showUser(db, name)
+	userInfo, err := showUser(db, name)
 	if err != nil {
 		return err
 	}
-	d.Set("name", databaseInfo.name)
+	d.Set("name", userInfo.name)
 	return nil
 }
 

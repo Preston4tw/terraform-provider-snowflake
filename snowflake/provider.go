@@ -29,7 +29,7 @@ func Provider() terraform.ResourceProvider {
 			"snowflake_table":    resourceSnowflakeTable(),
 			"snowflake_pipe":     resourceSnowflakePipe(),
 			"snowflake_view":     resourceSnowflakeView(),
-            "snowflake_user":     resourceSnowflakeUser(),
+			"snowflake_user":     resourceSnowflakeUser(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
