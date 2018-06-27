@@ -301,3 +301,54 @@ func showPipe(db *sql.DB, database string, schema string, name string) (showPipe
 	}
 	return r, nil
 }
+
+func showUser(db *sql.DB, name string) (showUserRow, error) {
+	var r showUserRow
+	// This verifies that one and only one user exists
+	exists, err := sqlObjExists(db, "users", name, "account")
+	if err != nil {
+		return r, err
+	}
+	if exists == false {
+		return r, fmt.Errorf("User %s does not exist", name)
+	}
+	statement := fmt.Sprintf("SHOW USERS LIKE '%s'", name)
+
+	rows, err := db.Query(statement)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(
+			&r.name,
+			&r.created_on,
+			&r.login_name,
+			&r.display_name,
+			&r.first_name,
+			&r.last_name,
+			&r.email,
+			&r.mins_to_unlock,
+			&r.days_to_expiry,
+			&r.comment,
+			&r.disabled,
+			&r.must_change_password,
+			&r.snowflake_lock,
+			&r.default_warehouse,
+			&r.default_namespace,
+			&r.default_role,
+			&r.ext_authn_duo,
+			&r.ext_authn_uid,
+			&r.mins_to_bypass_mfa,
+			&r.owner,
+			&r.last_success_login,
+			&r.expires_at_time,
+			&r.locked_until_time,
+			&r.has_password,
+			&r.has_rsa_public_key,
+		); err != nil {
+			return r, err
+		}
+	}
+	return r, nil
+}

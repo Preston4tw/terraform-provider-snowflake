@@ -5,6 +5,34 @@ import (
 	"time"
 )
 
+type showUserRow struct {
+	name                 string
+	created_on           time.Time
+	login_name           string
+	display_name         string
+	first_name           string
+	last_name            string
+	email                string
+	mins_to_unlock       string
+	days_to_expiry       string
+	comment              string
+	disabled             bool
+	must_change_password bool
+	snowflake_lock       bool
+	default_warehouse    string
+	default_namespace    string
+	default_role         string
+	ext_authn_duo        string
+	ext_authn_uid        string
+	mins_to_bypass_mfa   string
+	owner                string
+	last_success_login   sql.NullString
+	expires_at_time      sql.NullString
+	locked_until_time    sql.NullString
+	has_password         bool
+	has_rsa_public_key   bool
+}
+
 type showDatabaseRow struct {
 	createdOn     time.Time
 	name          string
