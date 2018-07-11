@@ -74,11 +74,6 @@ func resourceSnowflakeUser() *schema.Resource {
 					return getKeyFingerprint(v.(string))
 				},
 			},
-			"rsa_public_key_fp": {
-				//This field cannot be set manually; it gets calculated by Snowflake.
-				Type:     schema.TypeString,
-				Optional: true,
-			},
 		},
 	}
 }
