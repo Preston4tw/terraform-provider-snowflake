@@ -1,12 +1,24 @@
 package snowflake
 
 import (
+	"crypto/sha256"
 	"database/sql"
+	b64 "encoding/base64"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
+
+func getKeyFingerprint(key string) string {
+	kb, _ := b64.StdEncoding.DecodeString(key)
+	h := sha256.New()
+	h.Write(kb)
+	bs := h.Sum(nil)
+	fp := b64.StdEncoding.EncodeToString(bs)
+	fp = "SHA256:" + fp
+	return fp
+}
 
 func resourceSnowflakeUser() *schema.Resource {
 	return &schema.Resource{
@@ -55,6 +67,13 @@ func resourceSnowflakeUser() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"rsa_public_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+				StateFunc: func(v interface{}) string {
+					return getKeyFingerprint(v.(string))
+				},
+			},
 		},
 	}
 }
@@ -67,6 +86,7 @@ func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error
 	must_change_password := d.Get("must_change_password").(bool)
 	default_role := strings.ToUpper(d.Get("default_role").(string))
 	default_warehouse := strings.ToUpper(d.Get("default_warehouse").(string))
+	rsa_public_key := d.Get("rsa_public_key").(string)
 
 	statement := fmt.Sprintf("CREATE USER %v", name)
 	if must_change_password == true {
@@ -84,6 +104,9 @@ func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error
 	if default_warehouse != "" {
 		statement += fmt.Sprintf(" DEFAULT_WAREHOUSE = '%s'", default_warehouse)
 	}
+	if rsa_public_key != "" {
+		statement += fmt.Sprintf(" RSA_PUBLIC_KEY = '%s'", rsa_public_key)
+	}
 
 	_, err := db.Exec(statement)
 	if err != nil {
@@ -96,17 +119,17 @@ func resourceSnowflakeUserCreate(d *schema.ResourceData, meta interface{}) error
 func resourceSnowflakeUserRead(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)
 	name := d.Id()
-	userInfo, err := showUser(db, name)
-	if err != nil {
-		return err
-	}
+	userInfo, err := descUser(db, name)
 	d.Set("name", userInfo.name)
 	d.Set("login_name", userInfo.login_name)
 	d.Set("email", userInfo.email)
 	d.Set("must_change_password", userInfo.must_change_password)
 	d.Set("default_role", userInfo.default_role)
 	d.Set("default_warehouse", userInfo.default_warehouse)
-
+	d.Set("rsa_public_key", userInfo.rsa_public_key_fp)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -177,6 +200,14 @@ func resourceSnowflakeUserUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 		d.SetPartial("default_warehouse")
 	}
+	if d.HasChange("rsa_public_key") {
+		statement := fmt.Sprintf("ALTER USER %v SET RSA_PUBLIC_KEY = '%v'", d.Id(), d.Get("rsa_public_key"))
+		if _, err := db.Exec(statement); err != nil {
+			return err
+		}
+		d.SetPartial("rsa_public_key")
+	}
+
 	d.Partial(false)
 	return nil
 }

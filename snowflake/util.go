@@ -302,8 +302,8 @@ func showPipe(db *sql.DB, database string, schema string, name string) (showPipe
 	return r, nil
 }
 
-func showUser(db *sql.DB, name string) (showUserRow, error) {
-	var r showUserRow
+func descUser(db *sql.DB, name string) (descUserResult, error) {
+	var r descUserResult
 	// This verifies that one and only one user exists
 	exists, err := sqlObjExists(db, "users", name, "account")
 	if err != nil {
@@ -312,43 +312,71 @@ func showUser(db *sql.DB, name string) (showUserRow, error) {
 	if exists == false {
 		return r, fmt.Errorf("User %s does not exist", name)
 	}
-	statement := fmt.Sprintf("SHOW USERS LIKE '%s'", name)
-
+	statement := fmt.Sprintf("DESC USER %s", name)
 	rows, err := db.Query(statement)
 	if err != nil {
 		return r, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		if err := rows.Scan(
-			&r.name,
-			&r.created_on,
-			&r.login_name,
-			&r.display_name,
-			&r.first_name,
-			&r.last_name,
-			&r.email,
-			&r.mins_to_unlock,
-			&r.days_to_expiry,
-			&r.comment,
-			&r.disabled,
-			&r.must_change_password,
-			&r.snowflake_lock,
-			&r.default_warehouse,
-			&r.default_namespace,
-			&r.default_role,
-			&r.ext_authn_duo,
-			&r.ext_authn_uid,
-			&r.mins_to_bypass_mfa,
-			&r.owner,
-			&r.last_success_login,
-			&r.expires_at_time,
-			&r.locked_until_time,
-			&r.has_password,
-			&r.has_rsa_public_key,
-		); err != nil {
+		var property string
+		var value string
+		var sfc_default string
+		var description string
+		if err := rows.Scan(&property, &value, &sfc_default, &description); err != nil {
 			return r, err
 		}
+		switch property {
+		case "NAME":
+			r.name = value
+		case "COMMENT":
+			r.comment = value
+		case "LOGIN_NAME":
+			r.login_name = value
+		case "DISPLAY_NAME":
+			r.display_name = value
+		case "FIRST_NAME":
+			r.first_name = value
+		case "MIDDLE_NAME":
+			r.middle_name = value
+		case "LAST_NAME":
+			r.last_name = value
+		case "EMAIL":
+			r.email = value
+		case "PASSWORD":
+			r.password = value
+		case "MUST_CHANGE_PASSWORD":
+			r.must_change_password = value
+		case "DISABLED":
+			r.disabled = value
+		case "SNOWFLAKE_LOCK":
+			r.snowflake_lock = value
+		case "SNOWFLAKE_SUPPORT":
+			r.snowflake_support = value
+		case "DAYS_TO_EXPIRY":
+			r.days_to_expiry = value
+		case "MINS_TO_UNLOCK":
+			r.mins_to_unlock = value
+		case "DEFAULT_WAREHOUSE":
+			r.default_warehouse = value
+		case "DEFAULT_NAMESPACE":
+			r.default_namespace = value
+		case "DEFAULT_ROLE":
+			r.default_role = value
+		case "EXT_AUTHN_DUO":
+			r.ext_authn_duo = value
+		case "EXT_AUTHN_UID":
+			r.ext_authn_uid = value
+		case "MINS_TO_BYPASS_MFA":
+			r.mins_to_bypass_mfa = value
+		case "MINS_TO_BYPASS_NETWORK_POLICY":
+			r.mins_to_bypass_network_policy = value
+		case "RSA_PUBLIC_KEY_FP":
+			r.rsa_public_key_fp = value
+		case "RSA_PUBLIC_KEY_2_FP":
+			r.rsa_public_key_2_fp = value
+		}
+
 	}
 	return r, nil
 }
