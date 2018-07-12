@@ -3,6 +3,7 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 /*
@@ -372,11 +373,54 @@ func descUser(db *sql.DB, name string) (descUserResult, error) {
 		case "MINS_TO_BYPASS_NETWORK_POLICY":
 			r.mins_to_bypass_network_policy = value
 		case "RSA_PUBLIC_KEY_FP":
-			r.rsa_public_key_fp = value
+			r.rsa_public_key = value
 		case "RSA_PUBLIC_KEY_2_FP":
-			r.rsa_public_key_2_fp = value
+			r.rsa_public_key_2 = value
 		}
 
 	}
+	return r, nil
+}
+
+func descStage(db *sql.DB, database string, schema string, name string) (descStageResult, error) {
+	var r descStageResult
+	exists, err := sqlObjExists(db, "stages", name, fmt.Sprintf("%s.%s", database, schema))
+	if err != nil {
+		return r, err
+	}
+	if exists == false {
+		return r, fmt.Errorf("Stage %s does not exist", name)
+	}
+	statement := fmt.Sprintf("DESC STAGE %s.%s.%s", database, schema, name)
+	rows, err := db.Query(statement)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var parent_property string
+		var property string
+		var property_type string
+		var property_value string
+		var property_default string
+		if err := rows.Scan(&parent_property, &property, &property_type, &property_value, &property_default); err != nil {
+			return r, err
+		}
+		switch property {
+		case "URL":
+			//when you DESC STAGE, the url is inside brackets and quotated. At least it's not in the middle of the other side, in parentheses and capital letters.
+			r.url = strings.Trim(property_value, "[\"]")
+
+		case "AWS_ROLE":
+			r.aws_role = property_value
+
+		case "AWS_EXTERNAL_ID":
+			r.aws_external_id = property_value
+
+		case "SNOWFLAKE_IAM_USER":
+			r.snowflake_iam_user = property_value
+		}
+	}
+
 	return r, nil
 }

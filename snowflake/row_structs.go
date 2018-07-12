@@ -28,8 +28,15 @@ type descUserResult struct {
 	ext_authn_uid                 string
 	mins_to_bypass_mfa            string
 	mins_to_bypass_network_policy string
-	rsa_public_key_fp             string
-	rsa_public_key_2_fp           string
+	rsa_public_key                string
+	rsa_public_key_2              string
+}
+
+type descStageResult struct {
+	url                string
+	aws_role           string
+	aws_external_id    string
+	snowflake_iam_user string
 }
 
 type showDatabaseRow struct {

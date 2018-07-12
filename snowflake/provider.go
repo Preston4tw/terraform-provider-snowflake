@@ -3,6 +3,7 @@ package snowflake
 import (
 	"database/sql"
 	"log"
+
 	// Snowflake SQL DB
 	_ "github.com/snowflakedb/gosnowflake"
 
@@ -30,6 +31,7 @@ func Provider() terraform.ResourceProvider {
 			"snowflake_pipe":     resourceSnowflakePipe(),
 			"snowflake_view":     resourceSnowflakeView(),
 			"snowflake_user":     resourceSnowflakeUser(),
+			"snowflake_stage":    resourceSnowflakeStage(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
