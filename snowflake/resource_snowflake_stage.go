@@ -12,7 +12,7 @@ func resourceSnowflakeStage() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceSnowflakeStageCreate,
 		Read:   resourceSnowflakeStageRead,
-		Update: resourceSnowflakeStageUpdate,
+		//Update: resourceSnowflakeStageUpdate,
 		Delete: resourceSnowflakeStageDelete,
 		Importer: &schema.ResourceImporter{
 			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
@@ -133,9 +133,10 @@ func resourceSnowflakeStageRead(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
+/*
 func resourceSnowflakeStageUpdate(d *schema.ResourceData, meta interface{}) error {
 	return nil
-}
+}*/
 
 func resourceSnowflakeStageDelete(d *schema.ResourceData, meta interface{}) error {
 
