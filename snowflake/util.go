@@ -377,7 +377,6 @@ func descUser(db *sql.DB, name string) (descUserResult, error) {
 		case "RSA_PUBLIC_KEY_2_FP":
 			r.rsa_public_key_2 = value
 		}
-
 	}
 	return r, nil
 }
@@ -410,17 +409,13 @@ func descStage(db *sql.DB, database string, schema string, name string) (descSta
 		case "URL":
 			//when you DESC STAGE, the url is inside brackets and quotated. At least it's not in the middle of the other side, in parentheses and capital letters.
 			r.url = strings.Trim(property_value, "[\"]")
-
 		case "AWS_ROLE":
 			r.aws_role = property_value
-
 		case "AWS_EXTERNAL_ID":
 			r.aws_external_id = property_value
-
 		case "SNOWFLAKE_IAM_USER":
 			r.snowflake_iam_user = property_value
 		}
 	}
-
 	return r, nil
 }
