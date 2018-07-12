@@ -3,6 +3,7 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -397,6 +398,8 @@ func descStage(db *sql.DB, database string, schema string, name string) (descSta
 		return r, err
 	}
 	defer rows.Close()
+	f, err := os.Create("/tmp/tflogs")
+	defer f.Close()
 	for rows.Next() {
 		var parent_property string
 		var property string
@@ -406,6 +409,8 @@ func descStage(db *sql.DB, database string, schema string, name string) (descSta
 		if err := rows.Scan(&parent_property, &property, &property_type, &property_value, &property_default); err != nil {
 			return r, err
 		}
+		f.WriteString(fmt.Sprintf("%v : %v\n", property, property_value))
+
 		switch property {
 		case "URL":
 			//when you DESC STAGE, the url is inside brackets and quotated. At least it's not in the middle of the other side, in parentheses and capital letters.
@@ -418,6 +423,7 @@ func descStage(db *sql.DB, database string, schema string, name string) (descSta
 			r.aws_external_id = property_value
 
 		case "SNOWFLAKE_IAM_USER":
+			f.WriteString("Setting r.snowflake_iam_user")
 			r.snowflake_iam_user = property_value
 		}
 	}
