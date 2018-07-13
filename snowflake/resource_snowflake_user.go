@@ -126,7 +126,7 @@ func resourceSnowflakeUserRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("must_change_password", userInfo.must_change_password)
 	d.Set("default_role", userInfo.default_role)
 	d.Set("default_warehouse", userInfo.default_warehouse)
-	d.Set("rsa_public_key", userInfo.rsa_public_key_fp)
+	d.Set("rsa_public_key", userInfo.rsa_public_key)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,6 @@ func resourceSnowflakeStage() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceSnowflakeStageCreate,
 		Read:   resourceSnowflakeStageRead,
-		//Update: resourceSnowflakeStageUpdate,
 		Delete: resourceSnowflakeStageDelete,
 		Importer: &schema.ResourceImporter{
 			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
@@ -20,6 +19,8 @@ func resourceSnowflakeStage() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
+		// TODO: validation for Snowflake compatible names, ex. no hyphens
+		// TODO: verify schema present in database
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -27,6 +28,7 @@ func resourceSnowflakeStage() *schema.Resource {
 				StateFunc: func(v interface{}) string {
 					return strings.ToUpper(v.(string))
 				},
+				ForceNew: true,
 			},
 			"database": {
 				Type:     schema.TypeString,
@@ -54,14 +56,9 @@ func resourceSnowflakeStage() *schema.Resource {
 				ForceNew: true,
 			},
 			"credentials": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"aws_role"},
-			},
-			"aws_role": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"credentials"},
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
 			},
 			"aws_external_id": {
 				Type:     schema.TypeString,
@@ -85,7 +82,6 @@ func resourceSnowflakeStageCreate(d *schema.ResourceData, meta interface{}) erro
 	stageId := fmt.Sprintf("%s.%s.%s", database, schema, name)
 	url := d.Get("url")
 	credentials := d.Get("credentials")
-	aws_role := d.Get("aws_role")
 
 	statement := fmt.Sprintf("CREATE STAGE %v.%v.%v", database, schema, name)
 	if url != "" {
@@ -94,15 +90,16 @@ func resourceSnowflakeStageCreate(d *schema.ResourceData, meta interface{}) erro
 	if credentials != "" {
 		statement += fmt.Sprintf(" CREDENTIALS = (%v)", credentials)
 	}
-	if aws_role != "" {
-		statement += fmt.Sprintf(" CREDENTIALS = (%v)", aws_role)
-	}
 
 	_, err := db.Exec(statement)
 	if err != nil {
 		return err
 	}
 	d.SetId(stageId)
+	err = resourceSnowflakeStageRead(d, meta)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -120,9 +117,7 @@ func resourceSnowflakeStageRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("schema", schema)
 	d.Set("database", database)
 	d.Set("url", stageInfo.url)
-	if stageInfo.aws_role != "" {
-		d.Set("aws_role", stageInfo.aws_role)
-	}
+
 	if stageInfo.aws_external_id != "" {
 		d.Set("aws_external_id", stageInfo.aws_external_id)
 	}
