@@ -223,3 +223,11 @@ type infoSchemaColumn struct {
 	identityCycle          sql.NullString
 	comment                sql.NullString
 }
+
+type showTableGrantResult struct {
+	database   string
+	schema     string
+	table      string
+	grantee    string
+	privileges []string
+}
