@@ -423,14 +423,11 @@ func descStage(db *sql.DB, database string, schema string, name string) (descSta
 }
 
 func showTableGrant(db *sql.DB, grantee string, database string, schema string, table string) (showTableGrantResult, error) {
-	f, err := os.Create("/tmp/tflog")
 	var r showTableGrantResult
 	warehouse := fmt.Sprintf("USE WAREHOUSE %v", os.Getenv("TF_WAREHOUSE"))
 	db.Exec(warehouse)
 	statement := fmt.Sprintf("select grantee, privilege_type, is_grantable from %v.information_schema.object_privileges where grantee = '%v' and object_type = 'TABLE' and object_name = '%v' and object_catalog = '%v' and object_schema = '%v'", database, grantee, table, database, schema)
 	statement = strings.ToUpper(statement)
-	_, err = f.WriteString(statement)
-	_, err = f.WriteString("\n")
 	rows, err := db.Query(statement)
 	if err != nil {
 		return r, err
@@ -447,12 +444,7 @@ func showTableGrant(db *sql.DB, grantee string, database string, schema string, 
 			return r, err
 		}
 
-		_, err = f.WriteString(fmt.Sprintf("qgrantee: %v\n", qGrantee))
-		_, err = f.WriteString(fmt.Sprintf("ugrantee: %v\n", uGrantee))
-
 		if qGrantee == uGrantee {
-			_, err = f.WriteString(uGrantee)
-			_, err = f.WriteString("\n")
 			r.privileges = append(r.privileges, privilegeType)
 		}
 	}
