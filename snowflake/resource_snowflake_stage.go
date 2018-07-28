@@ -106,8 +106,8 @@ func resourceSnowflakeStageCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceSnowflakeStageRead(d *schema.ResourceData, meta interface{}) error {
 
 	db := meta.(*sql.DB)
-	stageId := d.Id()
-	s := strings.Split(stageId, ".")
+	stageID := d.Id()
+	s := strings.Split(stageID, ".")
 	database, schema, name := s[0], s[1], s[2]
 	stageInfo, err := descStage(db, database, schema, name)
 	if err != nil {
@@ -136,8 +136,8 @@ func resourceSnowflakeStageUpdate(d *schema.ResourceData, meta interface{}) erro
 func resourceSnowflakeStageDelete(d *schema.ResourceData, meta interface{}) error {
 
 	db := meta.(*sql.DB)
-	stageId := d.Id()
-	statement := fmt.Sprintf("DROP STAGE %v", stageId)
+	stageID := d.Id()
+	statement := fmt.Sprintf("DROP STAGE %v", stageID)
 	_, err := db.Exec(statement)
 	if err != nil {
 		return err
