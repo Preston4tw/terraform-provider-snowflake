@@ -84,8 +84,6 @@ func resourceSnowflakeTableGrantCreate(d *schema.ResourceData, meta interface{})
 	schema := strings.ToUpper(d.Get("schema").(string))
 	granteeRole := strings.ToUpper(d.Get("grantee_role").(string))
 	granteeShare := strings.ToUpper(d.Get("grantee_share").(string))
-	//privileges := d.Get("privileges")
-	//_, err = f.WriteString("7\n")
 
 	id := ""
 
@@ -138,10 +136,9 @@ func resourceSnowflakeTableGrantRead(d *schema.ResourceData, meta interface{}) e
 	tableGrantInfoResult, err := showTableGrant(db, grantee, database, schema, table)
 
 	d.Set("privileges", tableGrantInfoResult.privileges)
-	//This might not work but let's give it a try and see if i need to care whether the grantee is a role or a share
 	d.Set("granteeRole", tableGrantInfoResult.grantee)
 	d.Set("granteeShare", tableGrantInfoResult.grantee)
-	d.Set("table", table) //maybe this works too?
+	d.Set("table", table)
 	d.Set("schema", schema)
 	d.Set("database", database)
 
