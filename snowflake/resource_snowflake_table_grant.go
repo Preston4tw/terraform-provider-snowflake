@@ -84,7 +84,8 @@ func resourceSnowflakeTableGrantCreate(d *schema.ResourceData, meta interface{})
 	schema := strings.ToUpper(d.Get("schema").(string))
 	granteeRole := strings.ToUpper(d.Get("grantee_role").(string))
 	granteeShare := strings.ToUpper(d.Get("grantee_share").(string))
-	privileges := d.Get("privileges").([]string)
+	//privileges := d.Get("privileges")
+	//_, err = f.WriteString("7\n")
 
 	id := ""
 
@@ -96,8 +97,8 @@ func resourceSnowflakeTableGrantCreate(d *schema.ResourceData, meta interface{})
 
 	statement := "GRANT "
 
-	for _, p := range privileges {
-		statement += p
+	for _, p := range d.Get("privileges").([]interface{}) {
+		statement += p.(string)
 		statement += ", "
 		id += fmt.Sprintf("%v.", p)
 	}
@@ -105,9 +106,9 @@ func resourceSnowflakeTableGrantCreate(d *schema.ResourceData, meta interface{})
 	id = strings.Trim(id, ".")
 
 	if table == "ALL" {
-		statement += fmt.Sprintf("ON ALL TABLES IN %v.%v", database, schema)
+		statement += fmt.Sprintf(" ON ALL TABLES IN %v.%v", database, schema)
 	} else {
-		statement += fmt.Sprintf("ON %v.%v.%v TO ", database, schema, table)
+		statement += fmt.Sprintf(" ON %v.%v.%v TO ", database, schema, table)
 	}
 
 	if granteeRole != "" {
@@ -117,6 +118,8 @@ func resourceSnowflakeTableGrantCreate(d *schema.ResourceData, meta interface{})
 	if granteeShare != "" {
 		statement += fmt.Sprintf("SHARE %v", granteeShare)
 	}
+
+	statement = strings.ToUpper(statement)
 
 	_, err := db.Exec(statement)
 	if err != nil {
@@ -160,6 +163,8 @@ func resourceSnowflakeTableGrantDelete(d *schema.ResourceData, meta interface{})
 
 	statement = strings.Trim(statement, ", ")
 	statement += fmt.Sprintf(" ON %v.%v.%v FROM %v", database, schema, table, grantee)
+
+	statement = strings.ToUpper(statement)
 
 	_, err := db.Exec(statement)
 	if err != nil {
