@@ -3,6 +3,7 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -490,3 +491,4 @@ func showRole(db *sql.DB, role string) (showRoleRow, error) {
 	}
 	return r, nil
 }
+

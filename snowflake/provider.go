@@ -34,6 +34,7 @@ func Provider() terraform.ResourceProvider {
 			"snowflake_stage":       resourceSnowflakeStage(),
 			"snowflake_table_grant": resourceSnowflakeTableGrant(),
 			"snowflake_role":        resourceSnowflakeRole(),
+
 		},
 		ConfigureFunc: providerConfigure,
 	}

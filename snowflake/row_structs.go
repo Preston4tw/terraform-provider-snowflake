@@ -244,3 +244,4 @@ type showRoleRow struct {
 	owner           string
 	comment         sql.NullString
 }
+
