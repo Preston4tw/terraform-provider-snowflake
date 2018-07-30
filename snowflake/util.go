@@ -3,7 +3,6 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -424,8 +423,6 @@ func descStage(db *sql.DB, database string, schema string, name string) (descSta
 
 func showTableGrant(db *sql.DB, grantee string, database string, schema string, table string) (showTableGrantResult, error) {
 	var r showTableGrantResult
-	warehouse := fmt.Sprintf("USE WAREHOUSE %v", os.Getenv("TF_WAREHOUSE"))
-	db.Exec(warehouse)
 	statement := fmt.Sprintf("select grantee, privilege_type, is_grantable from %v.information_schema.object_privileges where grantee = '%v' and object_type = 'TABLE' and object_name = '%v' and object_catalog = '%v' and object_schema = '%v'", database, grantee, table, database, schema)
 	statement = strings.ToUpper(statement)
 	rows, err := db.Query(statement)
