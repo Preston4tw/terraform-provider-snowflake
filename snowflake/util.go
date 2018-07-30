@@ -457,3 +457,39 @@ func showTableGrant(db *sql.DB, grantee string, database string, schema string, 
 	return r, nil
 
 }
+
+func showRole(db *sql.DB, role string) (showRoleRow, error) {
+	var r showRoleRow
+	exists, err := sqlObjExists(db, "roles", role, "account")
+	if err != nil {
+		return r, err
+	}
+	if exists == false {
+		return r, fmt.Errorf("Role %s does not exist", role)
+	}
+
+	statement := fmt.Sprintf("show roles like '%v'", role)
+	statement = strings.ToUpper(statement)
+	rows, err := db.Query(statement)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(
+			&r.createdOn,
+			&r.name,
+			&r.isDefault,
+			&r.isCurrent,
+			&r.isInherited,
+			&r.assignedToUsers,
+			&r.grantedToRoles,
+			&r.grantedRoles,
+			&r.owner,
+			&r.comment,
+		); err != nil {
+			return r, err
+		}
+	}
+	return r, nil
+}
