@@ -232,6 +232,14 @@ type showTableGrantResult struct {
 	privileges []string
 }
 
+type showViewGrantResult struct {
+	database   string
+	schema     string
+	view       string
+	grantee    string
+	privileges []string
+}
+
 type showRoleRow struct {
 	createdOn       time.Time
 	name            string
