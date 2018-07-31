@@ -231,3 +231,17 @@ type showTableGrantResult struct {
 	grantee    string
 	privileges []string
 }
+
+type showRoleRow struct {
+	createdOn       time.Time
+	name            string
+	isDefault       string
+	isCurrent       string
+	isInherited     string
+	assignedToUsers string
+	grantedToRoles  string
+	grantedRoles    string
+	owner           string
+	comment         sql.NullString
+}
+
