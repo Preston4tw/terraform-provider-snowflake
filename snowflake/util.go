@@ -3,7 +3,6 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"strings"
 )
 
