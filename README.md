@@ -13,6 +13,9 @@ terraform-provider-snowflake is a [Terraform](https://www.terraform.io/) provide
 - snowflake_view
 - snowflake_user
 - snowflake_stage
+- snowflake_role
+- snowflake_table_grant
+- snowflake_view_grant
 
 ### Data Sources
 
