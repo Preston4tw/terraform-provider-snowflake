@@ -456,6 +456,40 @@ func showTableGrant(db *sql.DB, grantee string, database string, schema string, 
 
 }
 
+func showViewGrant(db *sql.DB, grantee string, database string, schema string, view string) (showViewGrantResult, error) {
+	var r showViewGrantResult
+	statement := fmt.Sprintf("select grantee, privilege_type, is_grantable from %v.information_schema.object_privileges where grantee = '%v' and object_type = 'VIEW' and object_name = '%v' and object_catalog = '%v' and object_schema = '%v'", database, grantee, view, database, schema)
+	statement = strings.ToUpper(statement)
+	rows, err := db.Query(statement)
+	if err != nil {
+		return r, err
+	}
+	var uGrantee = strings.ToUpper(grantee)
+
+	defer rows.Close()
+	for rows.Next() {
+		var qGrantee string
+		var privilegeType string
+		var isGrantable string
+
+		if err := rows.Scan(&qGrantee, &privilegeType, &isGrantable); err != nil {
+			return r, err
+		}
+
+		if qGrantee == uGrantee {
+			r.privileges = append(r.privileges, privilegeType)
+		}
+	}
+
+	r.grantee = grantee
+	r.database = database
+	r.schema = schema
+	r.view = view
+
+	return r, nil
+
+}
+
 func showRole(db *sql.DB, role string) (showRoleRow, error) {
 	var r showRoleRow
 	exists, err := sqlObjExists(db, "roles", role, "account")
@@ -491,4 +525,3 @@ func showRole(db *sql.DB, role string) (showRoleRow, error) {
 	}
 	return r, nil
 }
-
