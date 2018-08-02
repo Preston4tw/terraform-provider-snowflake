@@ -48,6 +48,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxIdleConns(1)
+	db.SetMaxOpenConns(1)
 	err = db.Ping()
 	// _, err = db.Exec("select 1")
 	if err != nil {
