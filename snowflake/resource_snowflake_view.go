@@ -3,16 +3,18 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+var reViewPrefix = regexp.MustCompile(`(?i)^create view .* as\n`)
+
 func resourceSnowflakeView() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceSnowflakeViewCreate,
 		Read:   resourceSnowflakeViewRead,
-		// Update: resourceSnowflakeViewUpdate,
 		Delete: resourceSnowflakeViewDelete,
 		Importer: &schema.ResourceImporter{
 			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
@@ -49,6 +51,14 @@ func resourceSnowflakeView() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				StateFunc: func(v interface{}) string {
+					viewDefinition := v.(string)
+					createViewPos := reViewPrefix.FindStringIndex(viewDefinition)
+					if createViewPos != nil {
+						return viewDefinition[createViewPos[1]:]
+					}
+					return viewDefinition
+				},
 			},
 			"comment": {
 				Type:     schema.TypeString,
@@ -77,15 +87,7 @@ func resourceSnowflakeViewCreate(d *schema.ResourceData, meta interface{}) error
 	name := d.Get("name")
 	viewID := strings.ToUpper(fmt.Sprintf("%s.%s.%s", database, schema, name))
 	viewDefinition := d.Get("view_definition").(string)
-	vdl := strings.ToLower(viewDefinition)
-	if !(strings.HasPrefix(vdl, "create view") || strings.HasPrefix(vdl, "create or replace view")) {
-		return fmt.Errorf("view_definition must begin with 'create view' or 'create or replace view'")
-	}
-	if !(strings.HasPrefix(vdl, fmt.Sprintf("create view %s as", strings.ToLower(viewID))) || strings.HasPrefix(vdl, fmt.Sprintf("create or replace view %s as", strings.ToLower(viewID)))) {
-		return fmt.Errorf("view_definition destination does not match resource parameters: %s", viewID)
-	}
-	// strings.HasPrefix
-	statement := fmt.Sprintf("%s", viewDefinition)
+	statement := fmt.Sprintf("create view %s.%s.%s as\n%s", database, schema, name, viewDefinition)
 	_, err := db.Exec(statement)
 	if err != nil {
 		return err
@@ -105,40 +107,11 @@ func resourceSnowflakeViewRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", t.tableName)
 	d.Set("database", t.tableCatalog)
 	d.Set("schema", t.tableSchema)
-	d.Set("view_definition", t.viewDefinition)
 	d.Set("comment", t.comment)
 	d.Set("secure", t.isSecure == "YES")
+	d.Set("view_definition", t.viewDefinition[reViewPrefix.FindStringIndex(t.viewDefinition)[1]:])
 	return nil
 }
-
-// func resourceSnowflakeViewUpdate(d *schema.ResourceData, meta interface{}) error {
-// 	db := meta.(*sql.DB)
-// 	s := strings.Split(d.Id(), ".")
-// 	databaseName, schemaName, viewName := s[0], s[1], s[2]
-// 	// Rather than issue a single alter database statement for all possible
-// 	// changes issue an alter for each possible thing that has changed. Enable
-// 	// partial mode.
-// 	d.Partial(true)
-// 	if d.HasChange("name") {
-// 		// check that the rename target does not exist
-// 		exists, err := sqlObjExists(db, "views", d.Get("name").(string), fmt.Sprintf("%s.%s", databaseName, schemaName))
-// 		if err != nil {
-// 			return err
-// 		}
-// 		if exists == true {
-// 			return fmt.Errorf("Cannot rename %s to %s.%s.%s, already exists", d.Id(), databaseName, schemaName, viewName)
-// 		}
-// 		statement := fmt.Sprintf("ALTER TABLE %s RENAME TO %s.%s.%s", d.Id(), databaseName, schemaName, d.Get("name"))
-// 		if _, err := db.Exec(statement); err != nil {
-// 			return err
-// 		}
-// 		d.SetPartial("name")
-// 		newResourceID := fmt.Sprintf("%s.%s.%s", databaseName, schemaName, d.Get("name"))
-// 		d.SetId(newResourceID)
-// 	}
-// 	d.Partial(false)
-// 	return nil
-// }
 
 func resourceSnowflakeViewDelete(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*sql.DB)

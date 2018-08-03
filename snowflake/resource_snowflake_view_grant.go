@@ -94,6 +94,7 @@ func resourceSnowflakeViewGrantCreate(d *schema.ResourceData, meta interface{}) 
 
 	statement += fmt.Sprintf("ROLE %v", granteeRole)
 
+
 	statement = strings.ToUpper(statement)
 
 	_, err := db.Exec(statement)
@@ -126,6 +127,7 @@ func resourceSnowflakeViewGrantDelete(d *schema.ResourceData, meta interface{}) 
 	grantID := d.Id()
 	s := strings.Split(grantID, ".")
 	granteeRole, database, schema, view := s[0], s[1], s[2], s[3]
+
 	statement := "REVOKE "
 
 	for index, val := range s {
@@ -136,6 +138,7 @@ func resourceSnowflakeViewGrantDelete(d *schema.ResourceData, meta interface{}) 
 
 	statement = strings.Trim(statement, ", ")
 	statement += fmt.Sprintf(" ON %v.%v.%v FROM ROLE %v", database, schema, view, granteeRole)
+
 
 	statement = strings.ToUpper(statement)
 

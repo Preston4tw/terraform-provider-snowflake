@@ -455,6 +455,7 @@ func showTableGrant(db *sql.DB, grantee string, database string, schema string, 
 
 }
 
+
 func showViewGrant(db *sql.DB, granteeRole string, database string, schema string, view string) (showViewGrantResult, error) {
 	var r showViewGrantResult
 	statement := fmt.Sprintf("show grants on %v.%v.%v", database, schema, view)

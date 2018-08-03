@@ -240,13 +240,6 @@ type showViewGrantResult struct {
 	privileges  []string
 }
 
-type showViewGrantForDeletion struct {
-	database    string
-	schema      string
-	view        string
-	granteeRole []string
-	privileges  []string
-}
 
 type showRoleRow struct {
 	createdOn       time.Time
