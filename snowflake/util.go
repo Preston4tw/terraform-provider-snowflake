@@ -455,32 +455,37 @@ func showTableGrant(db *sql.DB, grantee string, database string, schema string, 
 
 }
 
-func showViewGrant(db *sql.DB, grantee string, database string, schema string, view string) (showViewGrantResult, error) {
+
+func showViewGrant(db *sql.DB, granteeRole string, database string, schema string, view string) (showViewGrantResult, error) {
 	var r showViewGrantResult
-	statement := fmt.Sprintf("select grantee, privilege_type, is_grantable from %v.information_schema.object_privileges where grantee = '%v' and object_type = 'VIEW' and object_name = '%v' and object_catalog = '%v' and object_schema = '%v'", database, grantee, view, database, schema)
+	statement := fmt.Sprintf("show grants on %v.%v.%v", database, schema, view)
 	statement = strings.ToUpper(statement)
 	rows, err := db.Query(statement)
 	if err != nil {
 		return r, err
 	}
-	var uGrantee = strings.ToUpper(grantee)
 
 	defer rows.Close()
 	for rows.Next() {
-		var qGrantee string
-		var privilegeType string
-		var isGrantable string
+		var createdOn string
+		var privilege string
+		var grantedOn string
+		var name string
+		var grantedTo string
+		var granteeName string
+		var grantOption string
+		var grantedBy string
 
-		if err := rows.Scan(&qGrantee, &privilegeType, &isGrantable); err != nil {
+		if err := rows.Scan(&createdOn, &privilege, &grantedOn, &name, &grantedTo, &granteeName, &grantOption, &grantedBy); err != nil {
 			return r, err
 		}
 
-		if qGrantee == uGrantee {
-			r.privileges = append(r.privileges, privilegeType)
+		if granteeRole == granteeName {
+			r.privileges = append(r.privileges, privilege)
 		}
 	}
 
-	r.grantee = grantee
+	r.granteeRole = granteeRole
 	r.database = database
 	r.schema = schema
 	r.view = view

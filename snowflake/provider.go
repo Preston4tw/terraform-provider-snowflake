@@ -35,7 +35,6 @@ func Provider() terraform.ResourceProvider {
 			"snowflake_table_grant": resourceSnowflakeTableGrant(),
 			"snowflake_view_grant":  resourceSnowflakeViewGrant(),
 			"snowflake_role":        resourceSnowflakeRole(),
-
 		},
 		ConfigureFunc: providerConfigure,
 	}
