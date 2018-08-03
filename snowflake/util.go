@@ -424,8 +424,6 @@ func descStage(db *sql.DB, database string, schema string, name string) (descSta
 
 func showTableGrant(db *sql.DB, grantee string, database string, schema string, table string) (showTableGrantResult, error) {
 	var r showTableGrantResult
-	warehouse := fmt.Sprintf("USE WAREHOUSE %v", os.Getenv("TF_WAREHOUSE"))
-	db.Exec(warehouse)
 	statement := fmt.Sprintf("select grantee, privilege_type, is_grantable from %v.information_schema.object_privileges where grantee = '%v' and object_type = 'TABLE' and object_name = '%v' and object_catalog = '%v' and object_schema = '%v'", database, grantee, table, database, schema)
 	statement = strings.ToUpper(statement)
 	rows, err := db.Query(statement)
@@ -456,4 +454,78 @@ func showTableGrant(db *sql.DB, grantee string, database string, schema string, 
 
 	return r, nil
 
+}
+
+func showViewGrant(db *sql.DB, granteeRole string, database string, schema string, view string) (showViewGrantResult, error) {
+	var r showViewGrantResult
+	statement := fmt.Sprintf("show grants on %v.%v.%v", database, schema, view)
+	statement = strings.ToUpper(statement)
+	rows, err := db.Query(statement)
+	if err != nil {
+		return r, err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var createdOn string
+		var privilege string
+		var grantedOn string
+		var name string
+		var grantedTo string
+		var granteeName string
+		var grantOption string
+		var grantedBy string
+
+		if err := rows.Scan(&createdOn, &privilege, &grantedOn, &name, &grantedTo, &granteeName, &grantOption, &grantedBy); err != nil {
+			return r, err
+		}
+
+		if granteeRole == granteeName {
+			r.privileges = append(r.privileges, privilege)
+		}
+	}
+
+	r.granteeRole = granteeRole
+	r.database = database
+	r.schema = schema
+	r.view = view
+
+	return r, nil
+
+}
+
+func showRole(db *sql.DB, role string) (showRoleRow, error) {
+	var r showRoleRow
+	exists, err := sqlObjExists(db, "roles", role, "account")
+	if err != nil {
+		return r, err
+	}
+	if exists == false {
+		return r, fmt.Errorf("Role %s does not exist", role)
+	}
+
+	statement := fmt.Sprintf("show roles like '%v'", role)
+	statement = strings.ToUpper(statement)
+	rows, err := db.Query(statement)
+	if err != nil {
+		return r, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(
+			&r.createdOn,
+			&r.name,
+			&r.isDefault,
+			&r.isCurrent,
+			&r.isInherited,
+			&r.assignedToUsers,
+			&r.grantedToRoles,
+			&r.grantedRoles,
+			&r.owner,
+			&r.comment,
+		); err != nil {
+			return r, err
+		}
+	}
+	return r, nil
 }
