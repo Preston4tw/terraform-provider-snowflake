@@ -57,21 +57,11 @@ func resourceSnowflakeViewGrant() *schema.Resource {
 			},
 			"grantee_role": {
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
 				StateFunc: func(v interface{}) string {
 					return strings.ToUpper(v.(string))
 				},
-				ForceNew:      true,
-				ConflictsWith: []string{"grantee_share"},
-			},
-			"grantee_share": {
-				Type:     schema.TypeString,
-				Optional: true,
-				StateFunc: func(v interface{}) string {
-					return strings.ToUpper(v.(string))
-				},
-				ForceNew:      true,
-				ConflictsWith: []string{"grantee_role"},
+				ForceNew: true,
 			},
 		},
 	}
@@ -83,15 +73,8 @@ func resourceSnowflakeViewGrantCreate(d *schema.ResourceData, meta interface{}) 
 	database := strings.ToUpper(d.Get("database").(string))
 	schema := strings.ToUpper(d.Get("schema").(string))
 	granteeRole := strings.ToUpper(d.Get("grantee_role").(string))
-	granteeShare := strings.ToUpper(d.Get("grantee_share").(string))
 
-	id := ""
-
-	if granteeRole != "" {
-		id += fmt.Sprintf("%v.%v.%v.%v.", granteeRole, database, schema, view)
-	} else {
-		id += fmt.Sprintf("%v.%v.%v.%v.", granteeShare, database, schema, view)
-	}
+	id := fmt.Sprintf("%v.%v.%v.%v.", granteeRole, database, schema, view)
 
 	statement := "GRANT "
 
@@ -109,13 +92,7 @@ func resourceSnowflakeViewGrantCreate(d *schema.ResourceData, meta interface{}) 
 		statement += fmt.Sprintf(" ON %v.%v.%v TO ", database, schema, view)
 	}
 
-	if granteeRole != "" {
-		statement += fmt.Sprintf("ROLE %v", granteeRole)
-	}
-
-	if granteeShare != "" {
-		statement += fmt.Sprintf("SHARE %v", granteeShare)
-	}
+	statement += fmt.Sprintf("ROLE %v", granteeRole)
 
 	statement = strings.ToUpper(statement)
 
@@ -136,8 +113,7 @@ func resourceSnowflakeViewGrantRead(d *schema.ResourceData, meta interface{}) er
 	ViewGrantInfoResult, err := showViewGrant(db, grantee, database, schema, view)
 
 	d.Set("privileges", ViewGrantInfoResult.privileges)
-	d.Set("granteeRole", ViewGrantInfoResult.grantee)
-	d.Set("granteeShare", ViewGrantInfoResult.grantee)
+	d.Set("granteeRole", ViewGrantInfoResult.granteeRole)
 	d.Set("view", view)
 	d.Set("schema", schema)
 	d.Set("database", database)
@@ -149,7 +125,7 @@ func resourceSnowflakeViewGrantDelete(d *schema.ResourceData, meta interface{}) 
 	db := meta.(*sql.DB)
 	grantID := d.Id()
 	s := strings.Split(grantID, ".")
-	grantee, database, schema, view := s[0], s[1], s[2], s[3]
+	granteeRole, database, schema, view := s[0], s[1], s[2], s[3]
 	statement := "REVOKE "
 
 	for index, val := range s {
@@ -159,7 +135,7 @@ func resourceSnowflakeViewGrantDelete(d *schema.ResourceData, meta interface{}) 
 	}
 
 	statement = strings.Trim(statement, ", ")
-	statement += fmt.Sprintf(" ON %v.%v.%v FROM %v", database, schema, view, grantee)
+	statement += fmt.Sprintf(" ON %v.%v.%v FROM ROLE %v", database, schema, view, granteeRole)
 
 	statement = strings.ToUpper(statement)
 
