@@ -14,3 +14,10 @@
 - database
 - table
 - view
+
+## Resource extensions
+
+- stage
+  - type block
+    - type = json
+    - strip_outer_array = true
