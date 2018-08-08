@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-var reViewPrefix = regexp.MustCompile(`(?i)^create view .* as\n`)
+var reViewPrefix = regexp.MustCompile(`(?i)^create (or replace )?view .* as\n`)
 
 func resourceSnowflakeView() *schema.Resource {
 	return &schema.Resource{
