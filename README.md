@@ -2,6 +2,10 @@
 
 terraform-provider-snowflake is a [Terraform](https://www.terraform.io/) provider for the [Snowflake](https://www.snowflake.net/) cloud data warehouse.
 
+## Why
+
+Getting data into Snowflake without terraform-provider-snowflake involves a lot of tedious back and forth between AWS and Snowflake. Snowflake expects you have a s3 bucket somewhere with your data, and then you grant Snowflake access to that S3 bucket. Doing that involves creating either a user and access keys or an IAM role with a trust policy that allows Snowflake to assume the role with access to the bucket. As Terraform already manages AWS resources, by extending Terraform to support Snowflake, Terraform can be leveraged to make onboarding data easier.
+
 ## Supported types
 
 ### Resources
