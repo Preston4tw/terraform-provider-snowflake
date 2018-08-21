@@ -3,10 +3,13 @@ package snowflake
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
+
+//var reViewPrefix = regexp.MustCompile(`(?i)^create (or replace )?view .* as\n`)
 
 func resourceSnowflakeViewGrant() *schema.Resource {
 	return &schema.Resource{
@@ -63,6 +66,11 @@ func resourceSnowflakeViewGrant() *schema.Resource {
 				},
 				ForceNew: true,
 			},
+			"view_definition": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -73,7 +81,6 @@ func resourceSnowflakeViewGrantCreate(d *schema.ResourceData, meta interface{}) 
 	database := strings.ToUpper(d.Get("database").(string))
 	schema := strings.ToUpper(d.Get("schema").(string))
 	granteeRole := strings.ToUpper(d.Get("grantee_role").(string))
-
 	id := fmt.Sprintf("%v.%v.%v.%v.", granteeRole, database, schema, view)
 
 	statement := "GRANT "
@@ -94,7 +101,6 @@ func resourceSnowflakeViewGrantCreate(d *schema.ResourceData, meta interface{}) 
 
 	statement += fmt.Sprintf("ROLE %v", granteeRole)
 
-
 	statement = strings.ToUpper(statement)
 
 	_, err := db.Exec(statement)
@@ -107,17 +113,31 @@ func resourceSnowflakeViewGrantCreate(d *schema.ResourceData, meta interface{}) 
 }
 
 func resourceSnowflakeViewGrantRead(d *schema.ResourceData, meta interface{}) error {
+	f, err := os.Create("view_logging.txt")
+	defer f.Close()
 	db := meta.(*sql.DB)
 	grantID := d.Id()
 	s := strings.Split(grantID, ".")
 	grantee, database, schema, view := s[0], s[1], s[2], s[3]
+	f.WriteString("Current View Name: ")
+	f.WriteString(view)
 	ViewGrantInfoResult, err := showViewGrant(db, grantee, database, schema, view)
+	t, err := readView(db, database, schema, view)
+	if err != nil {
+		return err
+	}
+	f.WriteString("\nCurrent View Definition: ")
+	f.WriteString(t.viewDefinition)
+	viewDefinition := t.viewDefinition[reViewPrefix.FindStringIndex(t.viewDefinition)[1]:]
+	f.WriteString("\nModified View Definition: ")
+	f.WriteString(viewDefinition)
 
 	d.Set("privileges", ViewGrantInfoResult.privileges)
 	d.Set("granteeRole", ViewGrantInfoResult.granteeRole)
 	d.Set("view", view)
 	d.Set("schema", schema)
 	d.Set("database", database)
+	d.Set("view_definition", viewDefinition)
 
 	return err
 }
@@ -138,7 +158,6 @@ func resourceSnowflakeViewGrantDelete(d *schema.ResourceData, meta interface{}) 
 
 	statement = strings.Trim(statement, ", ")
 	statement += fmt.Sprintf(" ON %v.%v.%v FROM ROLE %v", database, schema, view, granteeRole)
-
 
 	statement = strings.ToUpper(statement)
 
