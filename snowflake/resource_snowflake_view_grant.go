@@ -119,18 +119,12 @@ func resourceSnowflakeViewGrantRead(d *schema.ResourceData, meta interface{}) er
 	grantID := d.Id()
 	s := strings.Split(grantID, ".")
 	grantee, database, schema, view := s[0], s[1], s[2], s[3]
-	f.WriteString("Current View Name: ")
-	f.WriteString(view)
 	ViewGrantInfoResult, err := showViewGrant(db, grantee, database, schema, view)
 	t, err := readView(db, database, schema, view)
 	if err != nil {
 		return err
 	}
-	f.WriteString("\nCurrent View Definition: ")
-	f.WriteString(t.viewDefinition)
 	viewDefinition := t.viewDefinition[reViewPrefix.FindStringIndex(t.viewDefinition)[1]:]
-	f.WriteString("\nModified View Definition: ")
-	f.WriteString(viewDefinition)
 
 	d.Set("privileges", ViewGrantInfoResult.privileges)
 	d.Set("granteeRole", ViewGrantInfoResult.granteeRole)
