@@ -153,6 +153,7 @@ func readTable(db *sql.DB, database string, schema string, name string) (infoSch
 			&r.commitAction,
 			&r.created,
 			&r.lastAltered,
+			&r.autoClusteringOn,
 			&r.comment,
 		); err != nil {
 			return r, err
@@ -454,7 +455,6 @@ func showTableGrant(db *sql.DB, grantee string, database string, schema string, 
 	return r, nil
 
 }
-
 
 func showViewGrant(db *sql.DB, granteeRole string, database string, schema string, view string) (showViewGrantResult, error) {
 	var r showViewGrantResult
