@@ -161,6 +161,7 @@ type infoSchemaTable struct {
 	commitAction              sql.NullString
 	created                   time.Time
 	lastAltered               time.Time
+	autoClusteringOn          string
 	comment                   sql.NullString
 }
 
@@ -239,7 +240,6 @@ type showViewGrantResult struct {
 	granteeRole string
 	privileges  []string
 }
-
 
 type showRoleRow struct {
 	createdOn       time.Time
